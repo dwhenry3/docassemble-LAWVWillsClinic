@@ -555,6 +555,8 @@ fields:
     required: False
     code: name_suffix()
     show if: guardian_required
+  - Relation to Testator: guardian.relation
+    show if: guardian_required
   - note: |
       _____  
       *Alternate Guardian*
@@ -569,6 +571,8 @@ fields:
   - Suffix: alt_guardian.name.suffix
     required: False
     code: name_suffix()
+    show if: guardian_required
+  - Relation to Testator: alt_guardian.relation
     show if: guardian_required
 ---
 question: |
