@@ -8,7 +8,7 @@ metadata:
   authors:
     - name: Dane W. Henry, Esq.
       organization: Legal Aid of West Virginia, Inc.
-  revision_date: 2023-10-20
+  revision_date: 2023-10-25
 ---
 features:
   javascript: docassemble.LAWVCommon:data/static/force_lightmode.js
@@ -32,8 +32,8 @@ objects:
   - spouse: Individual
   - children_of_marriage: DAList.using(object_type=Individual)
   - other_children: DAList.using(object_type=Individual)
-  - specific_assets: DAList.using(object_type=DAObject, complete_attribute='description')
-  - general_assets: DAList.using(object_type=DAObject, complete_attribute='description')
+  - specific_assets: DAList.using(object_type=DAObject, complete_attribute='complete')
+  - general_assets: DAList.using(object_type=DAObject, complete_attribute='complete')
   - residual: DAObject.using(complete_attribute='beneficiary')
   - executor: Individual
   - alt_executor: Individual
@@ -227,15 +227,25 @@ fields:
     hint: |
       Ex: child/children, sibling/siblings, etc.
   - Beneficiary: specific_assets[i].beneficiary
+    datatype: combobox
+    code: list_of_names
+    hint: |
+      Select a name or Type a new person
   - Beneficiary 2:  specific_assets[i].beneficiary2
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('specific_assets[i].method') == 'group'
   - Beneficiary 3:  specific_assets[i].beneficiary3
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('specific_assets[i].method') == 'group' && val('specific_assets[i].beneficiary2') != ''
   - Beneficiary 4:  specific_assets[i].beneficiary4
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('specific_assets[i].method') == 'group' && val('specific_assets[i].beneficiary2') != '' && val('specific_assets[i].beneficiary3') != ''
   - note: |
@@ -251,6 +261,8 @@ fields:
       variable: specific_assets[i].gift_fail
       is: other
   - Alternate beneficiary: specific_assets[i].alt_beneficiary
+    datatype: combobox
+    code: list_of_names
     show if:
       variable: specific_assets[i].gift_fail
       is: other
@@ -344,15 +356,23 @@ fields:
     hint: |
       Ex: child/children, sibling/siblings, etc.
   - Beneficiary: general_assets[i].beneficiary
+    datatype: combobox
+    code: list_of_names
   - Beneficiary 2:  general_assets[i].beneficiary2
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('general_assets[i].method') == 'group'
   - Beneficiary 3:  general_assets[i].beneficiary3
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('general_assets[i].method') == 'group' && val('general_assets[i].beneficiary2') != ''
   - Beneficiary 4:  general_assets[i].beneficiary4
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('general_assets[i].method') == 'group' && val('general_assets[i].beneficiary2') != '' && val('general_assets[i].beneficiary3') != ''
   - note: |
@@ -368,6 +388,8 @@ fields:
       variable: general_assets[i].gift_fail
       is: other
   - Alternate beneficiary: general_assets[i].alt_beneficiary
+    datatype: combobox
+    code: list_of_names
     show if:
       variable: general_assets[i].gift_fail
       is: other
@@ -449,15 +471,23 @@ fields:
     hint: |
       Ex: child/children, sibling/siblings, etc.
   - Beneficiary: residual.beneficiary
+    datatype: combobox
+    code: list_of_names
   - Beneficiary 2:  residual.beneficiary2
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('residual.method') == 'group'
   - Beneficiary 3:  residual.beneficiary3
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('residual.method') == 'group' && val('residual.beneficiary2') != ''
   - Beneficiary 4:  residual.beneficiary4
     required: False
+    datatype: combobox
+    code: list_of_names
     js show if: |
       val('residual.method') == 'group' && val('residual.beneficiary2') != '' && val('residual.beneficiary3') != ''
   - note: |
@@ -473,6 +503,8 @@ fields:
       variable: residual.gift_fail
       is: other
   - Alternate beneficiary: residual.alt_beneficiary
+    datatype: combobox
+    code: list_of_names
     show if:
       variable: residual.gift_fail
       is: other
@@ -490,6 +522,7 @@ fields:
   - Suffix: executor.name.suffix
     required: False
     code: name_suffix()
+  - Relation to Testator: executor.relation
   - note: |
       _____  
       *Alternate Executor*
@@ -500,6 +533,7 @@ fields:
   - Suffix: alt_executor.name.suffix
     required: False
     code: name_suffix()
+  - Relation to Testator: alt_executor.relation
 ---
 ga id: willClinicGuardianInformation
 question: |
@@ -614,12 +648,14 @@ mandatory: True
 code: |
   testator.name.first
   if married:
-    spouse.name.first
+    spouse.name.first    
     children_of_marriage.gather()
     if children_of_marriage.there_are_any:
       review_marriage_children
     else:
       review_basic
+  else:
+    children_of_marriage.there_are_any = False
   other_children.gather()
   if other_children.there_are_any:
     review_other_children
@@ -636,3 +672,47 @@ code: |
 
   generate_will
   success_exit
+---
+code: |
+  if married:
+    list_of_names = [spouse.name.full()]
+  else:
+    list_of_names = []
+  if children_of_marriage.there_are_any:
+    for child in children_of_marriage:
+      list_of_names.append(child.name.full())
+  if other_children.there_are_any:
+    for child in other_children:
+      list_of_names.append(child.name.full())
+---
+code: |
+  specific_assets[i].description
+  if specific_assets[i].beneficiary not in list_of_names:
+    list_of_names.append(specific_assets[i].beneficiary)
+  if specific_assets[i].method == 'group':
+    if defined('specific_assets[i].beneficiary2') and specific_assets[i].beneficiary2 != '' and specific_assets[i].beneficiary2 not in list_of_names:
+      list_of_names.append(specific_assets[i].beneficiary2)
+    if defined('specific_assets[i].beneficiary3') and specific_assets[i].beneficiary3 != '' and specific_assets[i].beneficiary3 not in list_of_names:
+      list_of_names.append(specific_assets[i].beneficiary3)
+    if defined('specific_assets[i].beneficiary4') and specific_assets[i].beneficiary4 != '' and specific_assets[i].beneficiary4 not in list_of_names:
+      list_of_names.append(specific_assets[i].beneficiary4)
+  if specific_assets[i].gift_fail == 'other':
+    if specific_assets[i].alt_beneficiary not in list_of_names:
+      list_of_names.append(specific_assets[i].alt_beneficiary)
+  specific_assets[i].complete = True
+---
+code: |
+  general_assets[i].description
+  if general_assets[i].beneficiary not in list_of_names:
+    list_of_names.append(general_assets[i].beneficiary)
+  if general_assets[i].method == 'group':
+    if defined('general_assets[i].beneficiary2') and general_assets[i].beneficiary2 != '' and general_assets[i].beneficiary2 not in list_of_names:
+      list_of_names.append(general_assets[i].beneficiary2)
+    if defined('general_assets[i].beneficiary3') and general_assets[i].beneficiary3 != '' and general_assets[i].beneficiary3 not in list_of_names:
+      list_of_names.append(general_assets[i].beneficiary3)
+    if defined('general_assets[i].beneficiary4') and general_assets[i].beneficiary4 != '' and general_assets[i].beneficiary4 not in list_of_names:
+      list_of_names.append(general_assets[i].beneficiary4)
+  if general_assets[i].gift_fail == 'other':
+    if general_assets[i].alt_beneficiary not in list_of_names:
+      list_of_names.append(general_assets[i].alt_beneficiary)
+  general_assets[i].complete = True
