@@ -8,7 +8,8 @@ metadata:
   authors:
     - name: Dane W. Henry, Esq.
       organization: Legal Aid of West Virginia, Inc.
-  revision_date: 2023-10-25
+  revision_date: 2023-11-06
+  unlisted: True
 ---
 features:
   javascript: docassemble.LAWVCommon:data/static/force_lightmode.js
@@ -89,6 +90,8 @@ question: |
   What is the name of the ${ ordinal(i) } child?
 fields:
   - First Name: children_of_marriage[i].name.first
+  - Middle Name: children_of_marriage[i].name.middle
+    required: False
   - Last Name: children_of_marriage[i].name.last
   - Suffix: children_of_marriage[i].name.suffix
     required: False
@@ -98,7 +101,7 @@ question: |
   So far, you have listed ${ children_of_marriage.number_as_word() } children.
   They are:
   % for child in children_of_marriage:
-  ## ${'\n'} * ${ child }
+  ## ${'\n'} * ${ child.name.full(middle="full") }
   % endfor
 subquestion: |
   Are there any others?
@@ -118,7 +121,7 @@ review:
       The children of the marriage are: 
       
       % for child in children_of_marriage:
-        * ${ child.name.full() }
+        * ${ child.name.full(middle="full") }
       % endfor
 tabular: table table-striped
 continue button field: review_marriage_children
@@ -161,6 +164,8 @@ question: |
   What is the name of the ${ ordinal(i) } child?
 fields:
   - First Name: other_children[i].name.first
+  - Middle Name: other_children[i].name.middle
+    required: False
   - Last Name: other_children[i].name.last
   - Suffix: other_children[i].name.suffix
     required: False
@@ -170,7 +175,7 @@ question: |
   So far, you have listed ${ other_children.number_as_word() } children.
   They are:
   % for child in other_children:
-  ## ${'\n'} * ${ child }
+  ## ${'\n'} * ${ child.name.full(middle="full") }
   % endfor
 subquestion: |
   Are there any others?
@@ -184,7 +189,7 @@ review:
       Children from other relationships are: 
       
       % for child in other_children:
-        * ${ child.name.full() }
+        * ${ child.name.full(middle="full") }
       % endfor
 tabular: table table-striped
 continue button field: review_other_children
@@ -600,14 +605,14 @@ review:
       ___
   - Edit Executor: executor.name.first
     button: |
-      **Executor**: ${ executor.name.full() }  
-      **Alternate Executor**: ${ alt_executor.name.full() }
+      **Executor**: ${ executor.name.full(middle="full") }  
+      **Alternate Executor**: ${ alt_executor.name.full(middle="full") }
       ___
   - Edit Guardian: guardian_required
     button: |
       % if guardian_required == True:
-        **Guardian**: ${ guardian.name.full() }
-        **Alternate Guardian**: ${ alt_guardian.name.full() }
+        **Guardian**: ${ guardian.name.full(middle="full") }
+        **Alternate Guardian**: ${ alt_guardian.name.full(middle="full") }
       % else:
         **Guardian**: No Guardian Needed
       % endif
@@ -665,12 +670,19 @@ code: |
     review_other_children
   specific_assets.gather()
   if specific_assets.there_are_any:
+    for asset in specific_assets:
+      asset.relation = asset.relation.lower()
     review_specific_assets
   general_assets.gather()
   if general_assets.there_are_any:
+    for asset in specific_assets:
+      asset.relation = asset.relation.lower()
     review_general_assets
   residual.beneficiary
+  residual.method = residual.method.lower()
   executor.name.first
+  executor.relation = executor.relation.lower()
+  alt_executor.relation = alt_executor.relation.lower()
   guardian_required
   review_additional_information
 
@@ -684,10 +696,10 @@ code: |
     list_of_names = []
   if children_of_marriage.there_are_any:
     for child in children_of_marriage:
-      list_of_names.append(child.name.full())
+      list_of_names.append(child.name.full(middle="full"))
   if other_children.there_are_any:
     for child in other_children:
-      list_of_names.append(child.name.full())
+      list_of_names.append(child.name.full(middle="full"))
 ---
 code: |
   specific_assets[i].description
